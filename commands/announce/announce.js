@@ -43,26 +43,32 @@ const announceCommand = async (interaction) => {
   let thumbnail = null;
   let image = null;
   let field = null;
+  let displayName = null;
+  let liveTitle = null;
 
- 
   // Verifica se é um link da Twitch e obtém o avatar, se for
   // TODO: Melhorar a forma que isso é feito. (Classe/função)
   switch (platform) {
     case "Twitch":
+
       const channel = new TwitchChannelInfo(liveURL)
       const avatar = channel.userAvatar()
       const liveThumbnail = channel.liveThumbnail()
       const gameInLive = channel.inLiveGame()
+      const userDisplayName = channel.displayName()
+      const title = channel.liveTitle()
+
       try {
         thumbnail = await avatar;
         image = await liveThumbnail
         field = await gameInLive
+        displayName = await userDisplayName
+        liveTitle = await title
       } catch (error) {
-        console.error("Erro ao obter avatar do usuário Twitch:", error);
+        console.error("Erro ao obter informações do usuário Twitch:", error);
       }
       break;
   }
-
 
   // Cria um botão com o link da live
   const urlButton = new ButtonBuilder()
@@ -76,8 +82,15 @@ const announceCommand = async (interaction) => {
 
   // Cria um embed
   const announceEmbed = new EmbedBuilder()
-    .setTitle("🎥 Livestream ON!")
-    .setURL(liveURL);
+    .setURL(liveURL)
+
+  if (liveTitle) {
+    announceEmbed.setTitle(liveTitle)
+  }
+
+  if (displayName && field) {
+    announceEmbed.setAuthor({ name: `${displayName}  |  ${field}` })
+  }
 
   if (thumbnail) {
     announceEmbed.setThumbnail(thumbnail);
@@ -85,10 +98,6 @@ const announceCommand = async (interaction) => {
 
   if (image) {
     announceEmbed.setImage(image)
-  }
-
-  if (field) {
-    announceEmbed.addFields({ name: "Game:", value: `${field}` });
   }
 
   // Responde ao comando
@@ -102,9 +111,7 @@ const announceCommand = async (interaction) => {
   });
 };
 
-/*
-* function body
-*/
+
 module.exports = {
   data: new SlashCommandBuilder()
     .setName(commandName)
